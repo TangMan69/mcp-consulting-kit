@@ -27,6 +27,7 @@
 - [ ] Add logging & metrics
 - [ ] Add tests for each server
 - [ ] Add CI workflow
+- [ ] Track detailed security hardening backlog in GitHub Issues (SEC-01 to SEC-10)
 
 ## v1.0.0 – Public Release
 
