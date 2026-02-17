@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Claude Desktop Tools | MCP Development Services</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            line-height: 1.6;
+            color: #1a1a1a;
+            background: #fff;
+        }
+        
+        .hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 80px 20px;
+            text-align: center;
+        }
+        
+        .hero h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+        
+        .hero p {
+            font-size: 24px;
+            max-width: 700px;
+            margin: 0 auto 40px;
+            opacity: 0.95;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background: white;
+            color: #667eea;
+            padding: 18px 40px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 18px;
+            transition: transform 0.2s;
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 80px 20px;
+        }
+        
+        .section-title {
+            font-size: 36px;
+            text-align: center;
+            margin-bottom: 60px;
+            color: #1a1a1a;
+        }
+        
+        .services {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 40px;
+            margin-bottom: 80px;
+        }
+        
+        .service-card {
+            background: #f8f9fa;
+            padding: 40px;
+            border-radius: 12px;
+            border: 2px solid #e0e0e0;
+            transition: all 0.3s;
+        }
+        
+        .service-card:hover {
+            border-color: #667eea;
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
+        }
+        
+        .service-card h3 {
+            font-size: 24px;
+            margin-bottom: 16px;
+            color: #667eea;
+        }
+        
+        .service-card .features {
+            list-style: none;
+            margin: 20px 0;
+        }
+        
+        .service-card .features li {
+            padding: 8px 0;
+            padding-left: 24px;
+            position: relative;
+        }
+        
+        .service-card .features li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        .pricing {
+            background: #f8f9fa;
+            padding: 60px 20px;
+        }
+        
+        .pricing-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .pricing-card {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            border: 2px solid #e0e0e0;
+            text-align: center;
+        }
+        
+        .pricing-card.featured {
+            border-color: #667eea;
+            position: relative;
+            transform: scale(1.05);
+        }
+        
+        .pricing-card .badge {
+            background: #667eea;
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        
+        .pricing-card h3 {
+            font-size: 24px;
+            margin-bottom: 16px;
+        }
+        
+        .pricing-card .price {
+            font-size: 48px;
+            font-weight: 700;
+            color: #667eea;
+            margin: 20px 0;
+        }
+        
+        .pricing-card ul {
+            list-style: none;
+            text-align: left;
+            margin: 30px 0;
+        }
+        
+        .pricing-card li {
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .case-studies {
+            background: white;
+        }
+        
+        .case-study {
+            margin-bottom: 60px;
+            padding: 40px;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+        
+        .case-study h3 {
+            font-size: 28px;
+            margin-bottom: 16px;
+            color: #667eea;
+        }
+        
+        .case-study .metric {
+            display: inline-block;
+            background: white;
+            padding: 16px 24px;
+            border-radius: 8px;
+            margin: 10px 10px 0 0;
+            font-weight: 600;
+        }
+        
+        .contact {
+            text-align: center;
+            padding: 80px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .contact h2 {
+            font-size: 36px;
+            margin-bottom: 24px;
+        }
+        
+        .contact p {
+            font-size: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .contact-button {
+            display: inline-block;
+            background: white;
+            color: #667eea;
+            padding: 18px 40px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 18px;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <h1>Custom Claude Desktop Tools<br/>for Your Business</h1>
+        <p>Supercharge your workflow with AI-powered automation. Database queries, API integrations, web scraping—all through natural language.</p>
+        <a href="#contact" class="cta-button">Get Started →</a>
+    </div>
+    
+    <div class="container">
+        <h2 class="section-title">What We Build</h2>
+        
+        <div class="services">
+            <div class="service-card">
+                <h3>🗄️ Business Intelligence</h3>
+                <p>Connect Claude to your databases and run SQL queries in plain English.</p>
+                <ul class="features">
+                    <li>PostgreSQL, MySQL, SQLite support</li>
+                    <li>Natural language SQL generation</li>
+                    <li>Automated report generation</li>
+                    <li>CSV/Excel exports</li>
+                    <li>Real-time data analysis</li>
+                </ul>
+                <p><strong>Example:</strong> "Show me top 10 customers by revenue this quarter"</p>
+            </div>
+            
+            <div class="service-card">
+                <h3>🔌 API Integration</h3>
+                <p>Connect your business tools—Slack, GitHub, Stripe, CRM, and more.</p>
+                <ul class="features">
+                    <li>Slack messaging & search</li>
+                    <li>GitHub issue/PR management</li>
+                    <li>Stripe customer lookups</li>
+                    <li>Custom API integrations</li>
+                    <li>Multi-step workflows</li>
+                </ul>
+                <p><strong>Example:</strong> "Create GitHub issue about login bug and notify #engineering"</p>
+            </div>
+            
+            <div class="service-card">
+                <h3>📰 Content Automation</h3>
+                <p>Automate web scraping, data extraction, and content processing.</p>
+                <ul class="features">
+                    <li>Competitive intelligence monitoring</li>
+                    <li>Lead data extraction</li>
+                    <li>RSS feed aggregation</li>
+                    <li>Content format conversion</li>
+                    <li>Change detection alerts</li>
+                </ul>
+                <p><strong>Example:</strong> "Monitor competitor pricing page and alert on changes"</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="pricing">
+        <div class="container">
+            <h2 class="section-title">Investment Options</h2>
+            
+            <div class="pricing-cards">
+                <div class="pricing-card">
+                    <h3>Starter</h3>
+                    <div class="price">$2,500</div>
+                    <p>Single tool integration</p>
+                    <ul>
+                        <li>1-2 MCP tools</li>
+                        <li>Basic integration</li>
+                        <li>Documentation</li>
+                        <li>1 week delivery</li>
+                        <li>30 days support</li>
+                    </ul>
+                </div>
+                
+                <div class="pricing-card featured">
+                    <span class="badge">MOST POPULAR</span>
+                    <h3>Professional</h3>
+                    <div class="price">$7,500</div>
+                    <p>Complete automation suite</p>
+                    <ul>
+                        <li>5-7 MCP tools</li>
+                        <li>Multi-system integration</li>
+                        <li>Custom workflows</li>
+                        <li>2-3 weeks delivery</li>
+                        <li>90 days support</li>
+                    </ul>
+                </div>
+                
+                <div class="pricing-card">
+                    <h3>Enterprise</h3>
+                    <div class="price">$15k+</div>
+                    <p>Ongoing development</p>
+                    <ul>
+                        <li>Unlimited tools</li>
+                        <li>Complex integrations</li>
+                        <li>Priority support</li>
+                        <li>Monthly retainer</li>
+                        <li>Dedicated developer</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container case-studies">
+        <h2 class="section-title">Real Results</h2>
+        
+        <div class="case-study">
+            <h3>SaaS Company: Automated Customer Support</h3>
+            <p>Built MCP tools to query Stripe, Intercom, and PostgreSQL database through Claude Desktop. Support team now resolves customer issues without switching between 5 different tools.</p>
+            <div class="metric">75% faster response time</div>
+            <div class="metric">$8k/month saved</div>
+            <div class="metric">2 weeks to deploy</div>
+        </div>
+        
+        <div class="case-study">
+            <h3>Marketing Agency: Competitive Intelligence</h3>
+            <p>Automated monitoring of 50+ competitor websites for pricing, features, and content changes. Daily digest sent to Slack with analysis.</p>
+            <div class="metric">20 hours/week saved</div>
+            <div class="metric">Real-time alerts</div>
+            <div class="metric">$5k one-time cost</div>
+        </div>
+        
+        <div class="case-study">
+            <h3>Tech Startup: Engineering Automation</h3>
+            <p>Integrated GitHub, Linear, Slack, and AWS into Claude Desktop. Engineers manage deployments, issues, and monitoring through natural language.</p>
+            <div class="metric">50% faster deploys</div>
+            <div class="metric">Zero context switching</div>
+            <div class="metric">3 week implementation</div>
+        </div>
+    </div>
+    
+    <div class="contact" id="contact">
+        <h2>Ready to Automate Your Workflow?</h2>
+        <p>Let's build custom Claude Desktop tools for your business</p>
+        <a href="mailto:youremail@example.com?subject=Custom%20MCP%20Development%20Inquiry" class="contact-button">
+            Start Your Project →
+        </a>
+        <p style="margin-top: 30px; font-size: 16px;">
+            Or schedule a call: <a href="https://calendly.com/yourlink" style="color: white; text-decoration: underline;">calendly.com/yourlink</a>
+        </p>
+    </div>
+    
+    <footer>
+        <p>Built with FusionAL | Model Context Protocol Development</p>
+        <p style="margin-top: 10px;">© 2026 Your Company Name. All rights reserved.</p>
+    </footer>
+</body>
+</html>
