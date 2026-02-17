@@ -1,0 +1,33 @@
+name: Security Smoke Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  security-smoke:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install test dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          $biDir = Get-ChildItem -Path "showcase-servers" -Directory | Where-Object { $_.Name -like "*Business Intelligence MCP*" } | Select-Object -First 1
+          if (-not $biDir) {
+            throw "Business Intelligence MCP directory not found under showcase-servers."
+          }
+          python -m pip install -r (Join-Path $biDir.FullName "requirements.txt")
+
+      - name: Run security smoke suite
+        shell: cmd
+        run: scripts\run-security-smoke.cmd

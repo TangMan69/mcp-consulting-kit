@@ -32,3 +32,14 @@ FastAPI MCP servers (Docker)
     ├── Databases (PostgreSQL / MySQL / SQLite)
     ├── APIs (Slack / GitHub / Stripe / custom)
     └── Web / RSS / scraping targets
+```
+
+---
+
+## Security smoke test
+
+Run both shared security tests and BI security endpoint tests with one command:
+
+```powershell
+.\scripts\run-security-smoke.ps1
+```

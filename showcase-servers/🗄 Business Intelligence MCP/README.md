@@ -37,6 +37,13 @@ Create a `.env` file with:
 ```
 DB_URL=postgresql+psycopg2://user:pass@host:5432/dbname
 ANTHROPIC_API_KEY=your_api_key_here
+API_KEY=your_shared_api_key_here
+ALLOWED_ORIGINS=http://localhost,http://127.0.0.1
+RATE_LIMIT_REQUESTS=60
+RATE_LIMIT_WINDOW_SECONDS=60
+LOG_LEVEL=INFO
+LOG_HEALTH_REQUESTS=false
+SERVICE_NAME=Business Intelligence MCP
 LLM_PROVIDER=claude
 PORT=8101
 ```
@@ -80,6 +87,12 @@ docker run --env-file .env -p 8101:8101 bi-mcp-showcase
 
 Convert natural language into SQL and execute it.
 
+Requires header:
+
+```
+X-API-Key: <API_KEY>
+```
+
 **Request:**
 
 ```json
@@ -97,6 +110,8 @@ Convert natural language into SQL and execute it.
   "rows": [...]
 }
 ```
+
+Response header includes `X-Request-ID` for tracing.
 
 ### **GET /health**
 

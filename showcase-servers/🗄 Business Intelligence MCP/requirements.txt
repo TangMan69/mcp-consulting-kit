@@ -7,3 +7,4 @@ aiosqlite
 python-dotenv
 anthropic
 pydantic
+pytest
