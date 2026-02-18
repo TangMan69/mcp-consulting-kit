@@ -3,12 +3,33 @@ import time
 import json
 import uuid
 import logging
+from typing import Any
 
 from fastapi import FastAPI, Header, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
+try:
+    import redis
+except ImportError:  # pragma: no cover - exercised in environments without redis installed
+    redis = None
+
 LOGGER_NAME = "mcp.observability"
 REQUEST_ID_HEADER = "X-Request-ID"
+SENSITIVE_FIELD_MARKER = "***REDACTED***"
+DEFAULT_SENSITIVE_KEYS = {
+    "api_key",
+    "apikey",
+    "authorization",
+    "token",
+    "access_token",
+    "refresh_token",
+    "secret",
+    "password",
+    "cookie",
+    "set-cookie",
+    "x-api-key",
+    "x-auth-token",
+}
 
 
 def get_allowed_origins() -> list[str]:
@@ -26,8 +47,45 @@ def get_log_level() -> str:
     return os.getenv("LOG_LEVEL", "INFO").upper()
 
 
+def get_redis_url() -> str | None:
+    value = os.getenv("REDIS_URL", "").strip()
+    return value or None
+
+
 def should_log_health_requests() -> bool:
     return os.getenv("LOG_HEALTH_REQUESTS", "false").strip().lower() == "true"
+
+
+def _is_sensitive_key(key: str) -> bool:
+    normalized = key.strip().lower().replace("_", "-")
+    return normalized in DEFAULT_SENSITIVE_KEYS or any(
+        token in normalized for token in ("token", "secret", "password", "api-key")
+    )
+
+
+def _mask_secret(value: Any) -> str:
+    text = str(value)
+    if not text:
+        return text
+    if len(text) <= 6:
+        return SENSITIVE_FIELD_MARKER
+    return f"{text[:2]}...{text[-2:]}"
+
+
+def redact_sensitive_data(value: Any, key_name: str | None = None) -> Any:
+    if key_name and _is_sensitive_key(key_name):
+        return _mask_secret(value)
+
+    if isinstance(value, dict):
+        return {key: redact_sensitive_data(item, key_name=key) for key, item in value.items()}
+
+    if isinstance(value, list):
+        return [redact_sensitive_data(item, key_name=key_name) for item in value]
+
+    if isinstance(value, tuple):
+        return tuple(redact_sensitive_data(item, key_name=key_name) for item in value)
+
+    return value
 
 
 def _resolve_service_name(app: FastAPI) -> str:
@@ -50,6 +108,7 @@ def _build_log_payload(
 ) -> dict:
     client_ip = request.client.host if request.client else "unknown"
     user_agent = request.headers.get("user-agent", "")
+    redacted_headers = redact_sensitive_data(dict(request.headers))
     return {
         "event": "http_request",
         "service": service_name,
@@ -60,6 +119,7 @@ def _build_log_payload(
         "duration_ms": round(duration_ms, 2),
         "client_ip": client_ip,
         "user_agent": user_agent,
+        "headers": redacted_headers,
     }
 
 
@@ -105,21 +165,92 @@ def configure_observability(app: FastAPI) -> None:
 
 def initialize_rate_limit_store(app: FastAPI) -> None:
     app.state.rate_limit_store = {}
+    app.state.redis_client = _create_redis_client()
+    app.state.redis_degraded = False
+    app.state.revoked_api_keys = set()
 
 
-def verify_api_key(x_api_key: str | None = Header(default=None, alias="X-API-Key")) -> None:
-    expected_api_key = os.getenv("API_KEY")
-    if not expected_api_key:
+def _create_redis_client():
+    redis_url = get_redis_url()
+    if not redis_url or redis is None:
+        return None
+
+    client = redis.from_url(redis_url, decode_responses=True)
+    client.ping()
+    return client
+
+
+def _load_active_api_keys() -> list[str]:
+    raw_keys = os.getenv("API_KEYS", "")
+    keys = [item.strip() for item in raw_keys.split(",") if item.strip()]
+
+    if keys:
+        return keys
+
+    fallback = os.getenv("API_KEY", "").strip()
+    return [fallback] if fallback else []
+
+
+def _load_revoked_api_keys() -> set[str]:
+    raw_revoked = os.getenv("REVOKED_API_KEYS", "")
+    return {item.strip() for item in raw_revoked.split(",") if item.strip()}
+
+
+def revoke_api_key(app: FastAPI, api_key: str) -> None:
+    if not api_key:
+        return
+    app.state.revoked_api_keys.add(api_key)
+
+
+def verify_api_key(request: Request, x_api_key: str | None = Header(default=None, alias="X-API-Key")) -> None:
+    active_api_keys = _load_active_api_keys()
+    if not active_api_keys:
         raise HTTPException(status_code=500, detail="API_KEY is not configured")
-    if x_api_key != expected_api_key:
+
+    revoked_api_keys = set(_load_revoked_api_keys())
+    runtime_revoked = getattr(request.app.state, "revoked_api_keys", set())
+    revoked_api_keys.update(runtime_revoked)
+
+    if not x_api_key or x_api_key in revoked_api_keys or x_api_key not in active_api_keys:
         raise HTTPException(status_code=401, detail="Invalid API key")
+
+
+def _enforce_rate_limit_with_redis(request: Request, limit: int, window: int) -> bool:
+    redis_client = getattr(request.app.state, "redis_client", None)
+    if redis_client is None:
+        return False
+
+    client_ip = request.client.host if request.client else "unknown"
+    key = f"rate_limit:{client_ip}:{request.url.path}"
+
+    try:
+        count = redis_client.incr(key)
+        if count == 1:
+            redis_client.expire(key, window)
+        request.app.state.redis_degraded = False
+    except Exception:
+        request.app.state.redis_degraded = True
+        _get_or_create_logger().warning(
+            "rate_limit.redis_unavailable fallback=in_memory path=%s",
+            request.url.path,
+        )
+        return False
+
+    if count > limit:
+        raise HTTPException(status_code=429, detail="Rate limit exceeded")
+
+    return True
 
 
 def enforce_rate_limit(request: Request) -> None:
     limit, window = get_rate_limit()
+    now = time.time()
+
+    if _enforce_rate_limit_with_redis(request, limit=limit, window=window):
+        return
+
     client_ip = request.client.host if request.client else "unknown"
     key = f"{client_ip}:{request.url.path}"
-    now = time.time()
 
     bucket = request.app.state.rate_limit_store.get(key)
     if not bucket or now >= bucket["reset_at"]:

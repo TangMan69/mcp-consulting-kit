@@ -46,6 +46,8 @@ def test_validate_sql_is_safe_blocks_dangerous_queries(sql):
 
 def test_nl_query_requires_api_key(monkeypatch):
     monkeypatch.setenv("API_KEY", "secret")
+    monkeypatch.delenv("API_KEYS", raising=False)
+    monkeypatch.delenv("REVOKED_API_KEYS", raising=False)
     client = TestClient(app)
     response = client.post("/nl-query", json={"query": "show top customers"})
     assert response.status_code == 401
@@ -53,6 +55,8 @@ def test_nl_query_requires_api_key(monkeypatch):
 
 def test_nl_query_rate_limit(monkeypatch):
     monkeypatch.setenv("API_KEY", "secret")
+    monkeypatch.delenv("API_KEYS", raising=False)
+    monkeypatch.delenv("REVOKED_API_KEYS", raising=False)
     monkeypatch.setenv("RATE_LIMIT_REQUESTS", "1")
     monkeypatch.setenv("RATE_LIMIT_WINDOW_SECONDS", "60")
     monkeypatch.setattr(main, "handle_nl_query", lambda req: {"sql": "SELECT 1;", "rows": []})
@@ -73,3 +77,49 @@ def test_nl_query_rate_limit(monkeypatch):
 
     assert first.status_code == 200
     assert second.status_code == 429
+
+
+def test_nl_query_accepts_dual_rotation_keys(monkeypatch):
+    monkeypatch.setenv("API_KEYS", "new-key,old-key")
+    monkeypatch.delenv("API_KEY", raising=False)
+    monkeypatch.delenv("REVOKED_API_KEYS", raising=False)
+    monkeypatch.setenv("RATE_LIMIT_REQUESTS", "10")
+    monkeypatch.setenv("RATE_LIMIT_WINDOW_SECONDS", "60")
+    monkeypatch.setattr(main, "handle_nl_query", lambda req: {"sql": "SELECT 1;", "rows": []})
+
+    app.state.rate_limit_store.clear()
+    client = TestClient(app)
+
+    with_old = client.post(
+        "/nl-query",
+        json={"query": "show top customers"},
+        headers={"X-API-Key": "old-key"},
+    )
+    with_new = client.post(
+        "/nl-query",
+        json={"query": "show top customers"},
+        headers={"X-API-Key": "new-key"},
+    )
+
+    assert with_old.status_code == 200
+    assert with_new.status_code == 200
+
+
+def test_nl_query_rejects_revoked_key(monkeypatch):
+    monkeypatch.setenv("API_KEYS", "new-key,old-key")
+    monkeypatch.setenv("REVOKED_API_KEYS", "old-key")
+    monkeypatch.delenv("API_KEY", raising=False)
+    monkeypatch.setenv("RATE_LIMIT_REQUESTS", "10")
+    monkeypatch.setenv("RATE_LIMIT_WINDOW_SECONDS", "60")
+    monkeypatch.setattr(main, "handle_nl_query", lambda req: {"sql": "SELECT 1;", "rows": []})
+
+    app.state.rate_limit_store.clear()
+    client = TestClient(app)
+
+    response = client.post(
+        "/nl-query",
+        json={"query": "show top customers"},
+        headers={"X-API-Key": "old-key"},
+    )
+
+    assert response.status_code == 401

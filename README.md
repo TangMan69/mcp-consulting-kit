@@ -43,3 +43,10 @@ Run both shared security tests and BI security endpoint tests with one command:
 ```powershell
 .\scripts\run-security-smoke.ps1
 ```
+
+## Security hardening references
+
+- Shared runbook: `showcase-servers/common/SECURITY-HARDENING.md`
+- API key rotation/revocation uses `API_KEYS` and `REVOKED_API_KEYS`
+- Shared rate-limiting can use Redis via `REDIS_URL` with in-memory degraded fallback
+- CI vulnerability waivers are tracked in `.trivyignore` and SEC-TRACKER issue #11
